@@ -23,30 +23,22 @@ namespace MicMute
         public MainForm()
         {
             InitializeComponent();
-
             Width = 300; Height = 80;
             this.Location = new Point(Settings.Default.posX, Settings.Default.posY);
             ShowInTaskbar = false;
-
-
-            
-
         }
         //проверка запущен ли zoom
-        private bool ZoomIsOn => Process.GetProcessesByName("zoom").Any();
-
+        //private bool ZoomIsOn => Process.GetProcessesByName("zoom").Any();
         private void OnNextDevice(DeviceChangedArgs next) => UpdateDevice(AudioController.DefaultCaptureDevice);
         private void MicOFF() {
             Height = 5;
             BackColor = Color.Green;
         }
-
         private void MicON()
         {
             Height = 80;
             BackColor = Color.Red;
         }
-
         private void MainForm_Load(object sender, EventArgs e)
         {
             //if (ZoomIsOn) {
@@ -74,7 +66,6 @@ namespace MicMute
             } else {
                 MicON();
             }
-
             UpdateDevice(AudioController.DefaultCaptureDevice);
             AudioController.AudioDeviceChanged.Subscribe(OnNextDevice);
         }
@@ -89,9 +80,9 @@ namespace MicMute
             UpdateStatus(device);
         }
 
-        Icon iconOff = Properties.Resources.off;
-        Icon iconOn = Properties.Resources.on;
-        Icon iconError = Properties.Resources.error;
+        readonly Icon iconOff = Properties.Resources.off;
+        readonly Icon iconOn = Properties.Resources.on;
+        readonly Icon iconError = Properties.Resources.error;
 
         public void UpdateStatus(IDevice device)
         {
