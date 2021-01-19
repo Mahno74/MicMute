@@ -66,6 +66,10 @@
     <Reference Include="Costura, Version=4.1.0.0, Culture=neutral, PublicKeyToken=9919ef960d84173d, processorArchitecture=MSIL">
       <HintPath>packages\Costura.Fody.4.1.0\lib\net40\Costura.dll</HintPath>
     </Reference>
+    <Reference Include="NAudio, Version=1.8.5.0, Culture=neutral, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\Dropbox\Projects\MicOFF\NAudio.dll</HintPath>
+    </Reference>
     <Reference Include="Shortcut">
       <HintPath>libs\Shortcut\Shortcut.dll</HintPath>
     </Reference>
@@ -138,6 +142,7 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
+    <Content Include="NAudio.dll" />
     <None Include="Resources\mic_on.ico" />
     <None Include="Resources\mic_off.ico" />
     <None Include="Assets\on.ico" />

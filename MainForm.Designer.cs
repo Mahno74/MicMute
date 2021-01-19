@@ -84,11 +84,13 @@
             this.contextMenuStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.InfoToolStripMenuItem});
             this.contextMenuStrip1.Name = "contextMenuStrip1";
+            this.contextMenuStrip1.Size = new System.Drawing.Size(290, 70);
             this.contextMenuStrip1.Opening += new System.ComponentModel.CancelEventHandler(this.InfoAboutMic_Opening);
             // 
             // InfoToolStripMenuItem
             // 
             this.InfoToolStripMenuItem.Name = "InfoToolStripMenuItem";
+            this.InfoToolStripMenuItem.Size = new System.Drawing.Size(289, 22);
             // 
             // MainForm
             // 
