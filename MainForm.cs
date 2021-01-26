@@ -1,91 +1,54 @@
-﻿//using AudioSwitcher.AudioApi;
-using AudioSwitcher.AudioApi.CoreAudio;
-using Microsoft.Win32;
+﻿using AudioSwitcher.AudioApi.CoreAudio;
 using Shortcut;
 using System;
-using System.Diagnostics;
 using System.Drawing;
-using System.Reactive;
-using System.Threading;
 using System.Windows.Forms;
 using MicMute.Properties;
-using System.Linq;
-using System.Runtime.InteropServices;
-using NAudio.CoreAudioApi;
-
+//проверка запущен ли zoom
+//private bool ZoomIsOn => Process.GetProcessesByName("zoom").Any();
 namespace MicMute
 {
     public partial class MainForm : Form
     {
-        CoreAudioMicMute CAMM = new CoreAudioMicMute();
+        private readonly CoreAudioMicMute CAMM = new CoreAudioMicMute();
         public CoreAudioController AudioController = new CoreAudioController();
         private readonly HotkeyBinder hotkeyBinder = new HotkeyBinder();
         private Hotkey hotkey;
+        bool micMuteStatus;
 
-        internal class CoreAudioMicMute {
-
-            private MMDevice[] rgMicDevice; //Для записи найденных для нас устройств
-            int MaxMicro = 0;
-
-            public CoreAudioMicMute() {
-                MMDeviceEnumerator DevEnum = new MMDeviceEnumerator();
-
-                MMDeviceCollection devices = DevEnum.EnumerateAudioEndPoints(DataFlow.Capture, DeviceState.Active); // DataFlow.Capture - Микрофоны(или устройства в которые поступает звук), DeviceState.Active - Активные устройства
-                // Поиск активных устройств(для нас микрофонов)
-                MaxMicro = 0;
-                for (int i = 0; i < devices.Count; i++) // devices.Count - количество устройств(активные микрофоны)
-                {
-                    MMDevice deviceAt = devices[i];
-                    if (deviceAt.DataFlow == DataFlow.Capture && deviceAt.State == DeviceState.Active){
-                        ++MaxMicro;
-                    }
-                }
-                // Заносим в массив (все) найденный(ые) микрофон(ы) или другие устройства(динамики, наушники или др)  
-                rgMicDevice = new MMDevice[MaxMicro];
-                MaxMicro = 0;
-                for (int i = 0; i < devices.Count; i++) {
-                    MMDevice deviceAt = devices[i];
-                    if (deviceAt.DataFlow == DataFlow.Capture && deviceAt.State == DeviceState.Active) //Меняем на свое устройство(а)
-                    {
-                        MaxMicro++;
-                        rgMicDevice[MaxMicro - 1] = deviceAt;
-                    }
-                }
-
-                if (MaxMicro == 0)//Если не найден ни один микрофон(устройство)
-                    MessageBox.Show("Микрофон не найден!"); //Было в коде, от куда я взял. Программа прекратит выполнение, выдав экзепшин), если не поменять на, что либо другое.
-            }
-
-            public void SetMute(bool mute) //Функция, отключающая звук устройств записанных в массив  private MMDevice[] rgMicDevice
-            {
-                for (int i = 0; i < MaxMicro; i++) {
-                    rgMicDevice[i].AudioEndpointVolume.Mute = mute; //= true - выключить звук устройства(для нас микрофона)
-                }
-            }
-
-        }
-
-        public MainForm()
-        {
+        public MainForm() {
             InitializeComponent();
-            Width = 300; Height = 80;
-            this.Location = new Point(Settings.Default.posX, Settings.Default.posY);
-            ShowInTaskbar = false;
+            TransparencyKey = Color.Black; //задаем прозрачность задника черного цвета
+            Location = new Point(Settings.Default.posX, Settings.Default.posY); //загружаем последнюю точку расположения окна
+            SetWindowSize(); //загружаем размер окна
+            ShowInTaskbar = false; //не показываем окно в трее
+            MouseWheel += This_MouseWheel; //прицеаляем обработчк события колеса мыши
         }
-        //проверка запущен ли zoom
-        //private bool ZoomIsOn => Process.GetProcessesByName("zoom").Any();
-        private void OnNextDevice(AudioSwitcher.AudioApi.DeviceChangedArgs next) => UpdateDevice( AudioController.DefaultCaptureDevice);
+
+        private void SetWindowSize() {
+            //если микрофон выключен
+            if (micMuteStatus) {
+                this.Width = Settings.Default.thisWidthOff;
+                this.Height = Settings.Default.thisHeightOff;
+            } else {
+                this.Width = Settings.Default.thisWidthOn;
+                this.Height = Settings.Default.thisHeightOn;
+            }
+        }
+
         private void MicOFF() {
-            Height = 5;
-            BackColor = Color.Green;
+            pictureBox1.Image = new Bitmap(Resources.mic_off_bmp_black);
             CAMM.SetMute(true);
+            micMuteStatus = true;
+            SetWindowSize();
         }
-        private void MicON()
-        {
-            Height = 80;
-            BackColor = Color.Red;
+        private void MicON() {
+            pictureBox1.Image = new Bitmap(Resources.mic_on_bmp_black);
             CAMM.SetMute(false);
+            micMuteStatus = false;
+            SetWindowSize();
         }
+
         private void MainForm_Load(object sender, EventArgs e)
         {
             try {
@@ -98,39 +61,13 @@ namespace MicMute
             //проверяем доступность микрофона при старте
             if (device.IsMuted) {
                 MicOFF();
+                micMuteStatus = true;
             } else {
                 MicON();
+                micMuteStatus = false;
             }
             UpdateDevice(AudioController.DefaultCaptureDevice);
             AudioController.AudioDeviceChanged.Subscribe(OnNextDevice);
-        }
-
-        private void OnMuteChanged(AudioSwitcher.AudioApi.DeviceMuteChangedArgs next) => UpdateStatus(next.Device);
-
-        IDisposable muteChangedSubscription;
-        public void UpdateDevice(AudioSwitcher.AudioApi.IDevice device)
-        {
-            muteChangedSubscription?.Dispose();
-            muteChangedSubscription = device?.MuteChanged.Subscribe(OnMuteChanged);
-            UpdateStatus(device);
-        }
-
-        readonly Icon iconOff = Properties.Resources.off;
-        readonly Icon iconOn = Properties.Resources.on;
-        readonly Icon iconError = Properties.Resources.error;
-
-        public void UpdateStatus(AudioSwitcher.AudioApi.IDevice device)
-        {
-            if (device != null) {
-                UpdateIcon(device.IsMuted ? iconOff : iconOn, device.FullName);
-            } else {
-                UpdateIcon(iconError, "< No device >");
-            }
-        }
-        private void UpdateIcon(Icon icon, string tooltipText)
-        {
-            this.icon.Icon = icon;
-            this.icon.Text = tooltipText;
         }
 
         public async void ToggleMicStatus()
@@ -147,12 +84,10 @@ namespace MicMute
 
         private void Icon_MouseClick(object sender, MouseEventArgs e)
         {
-            if (e.Button == MouseButtons.Left)
-            {
+            if (e.Button == MouseButtons.Left) {
                 ToggleMicStatus();
             }
         }
-
 
         private void ExitMenuItem_Click(object sender, EventArgs e)
         {
@@ -161,8 +96,61 @@ namespace MicMute
             Settings.Default.Save();
             Application.Exit();
         }
+        #region Update mic status
+        private void OnNextDevice(AudioSwitcher.AudioApi.DeviceChangedArgs next) => UpdateDevice(AudioController.DefaultCaptureDevice);
+        private void OnMuteChanged(AudioSwitcher.AudioApi.DeviceMuteChangedArgs next) => UpdateStatus(next.Device);
 
-        #region Dragging Window
+        IDisposable muteChangedSubscription;
+        public void UpdateDevice(AudioSwitcher.AudioApi.IDevice device) {
+            muteChangedSubscription?.Dispose();
+            muteChangedSubscription = device?.MuteChanged.Subscribe(OnMuteChanged);
+            UpdateStatus(device);
+        }
+
+        readonly Icon iconOff = Properties.Resources.off;
+        readonly Icon iconOn = Properties.Resources.on;
+        readonly Icon iconError = Properties.Resources.error;
+
+        public void UpdateStatus(AudioSwitcher.AudioApi.IDevice device) {
+            if (device != null) {
+                UpdateIcon(device.IsMuted ? iconOff : iconOn, device.FullName);
+            } else {
+                UpdateIcon(iconError, "< No device >");
+            }
+        }
+        private void UpdateIcon(Icon icon, string tooltipText) {
+            this.icon.Icon = icon;
+            this.icon.Text = tooltipText;
+        }
+        #endregion
+
+        #region Dragging and sizing Window
+
+        void This_MouseWheel(object sender, MouseEventArgs e) {
+
+            if (e.Delta > 0) {
+                Width += 5;
+                Height += 5;
+            } else {
+                Width -= 5;
+                Height -= 5;
+            }
+
+            if (Control.ModifierKeys == Keys.Shift) {
+                if (micMuteStatus) {
+                    Settings.Default.thisWidthOff = Width;
+                    Settings.Default.thisHeightOff = Height;
+                } else {
+                    Settings.Default.thisWidthOn = Width;
+                    Settings.Default.thisHeightOn = Height;
+                }
+            } else {
+                Settings.Default.thisWidthOff = Width;
+                Settings.Default.thisHeightOff = Height;
+                Settings.Default.thisWidthOn = Width;
+                Settings.Default.thisHeightOn = Height;
+            }
+        }
 
         bool dragging = false;
         int xOffset = 0;
@@ -179,17 +167,25 @@ namespace MicMute
                 this.Update();
             }
         }
-      
-        private void MainForm_MouseUp(object sender, MouseEventArgs e) {
-            dragging = false;
-        }
+        private void MainForm_MouseUp(object sender, MouseEventArgs e) => dragging = false;
 
         #endregion
 
-
+        #region Context menu
         private void InfoAboutMic_Opening(object sender, System.ComponentModel.CancelEventArgs e) {
             var device = AudioController.DefaultCaptureDevice;
-            this.InfoToolStripMenuItem.Text = device.FullName.ToString();
+            this.InfoToolStripMenuItem.Text =$"Используется микрофон {device.FullName}";
         }
+        private void ResetToolStripMenuItem_Click(object sender, EventArgs e) {
+            Width = 100;
+            Height = 100;
+            Settings.Default.thisHeightOff = 100;
+            Settings.Default.thisHeightOn = 100;
+            Settings.Default.thisWidthOff = 100;
+            Settings.Default.thisWidthOn = 100;
+        }
+        #endregion
+
+
     }
 }

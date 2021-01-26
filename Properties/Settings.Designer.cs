@@ -46,5 +46,53 @@ namespace MicMute.Properties {
                 this["posY"] = value;
             }
         }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("100")]
+        public int thisWidthOn {
+            get {
+                return ((int)(this["thisWidthOn"]));
+            }
+            set {
+                this["thisWidthOn"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("100")]
+        public int thisHeightOn {
+            get {
+                return ((int)(this["thisHeightOn"]));
+            }
+            set {
+                this["thisHeightOn"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("100")]
+        public int thisWidthOff {
+            get {
+                return ((int)(this["thisWidthOff"]));
+            }
+            set {
+                this["thisWidthOff"] = value;
+            }
+        }
+        
+        [global::System.Configuration.UserScopedSettingAttribute()]
+        [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
+        [global::System.Configuration.DefaultSettingValueAttribute("100")]
+        public int thisHeightOff {
+            get {
+                return ((int)(this["thisHeightOff"]));
+            }
+            set {
+                this["thisHeightOff"] = value;
+            }
+        }
     }
 }
